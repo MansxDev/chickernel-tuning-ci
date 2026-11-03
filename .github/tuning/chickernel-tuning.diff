@@ -1,0 +1,21 @@
+diff --git a/arch/arm64/configs/chickernel_defconfig b/arch/arm64/configs/chickernel_defconfig
+index bed8a4f..6b9c3a3 100644
+--- a/arch/arm64/configs/chickernel_defconfig
++++ b/arch/arm64/configs/chickernel_defconfig
+@@ -748,3 +748,16 @@ CONFIG_HIST_TRIGGERS=y
+ CONFIG_PID_IN_CONTEXTIDR=y
+ CONFIG_FUNCTION_ERROR_INJECTION=y
+ # CONFIG_RUNTIME_TESTING_MENU is not set
++
++# >>> chickernel tuning >>>
++# RCU lazy on by default: callback ditunda saat CPU idle (hemat daya)
++# CONFIG_RCU_LAZY_DEFAULT_OFF is not set
++
++# CAKE: AQM alternatif fq_codel. WAJIB =y karena AnyKernel3 pakai do.modules=0
++CONFIG_NET_SCH_CAKE=y
++
++# NTFS3: baca/tulis NTFS via USB OTG
++CONFIG_NTFS3_FS=y
++CONFIG_NTFS3_FS_POSIX_ACL=y
++CONFIG_NTFS3_LZX_XPRESS=y
++# <<< chickernel tuning <<<
