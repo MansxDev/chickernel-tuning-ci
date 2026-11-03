@@ -202,20 +202,20 @@ jobs:
       - name: Apply ChicKernel tuning patch
         working-directory: kernel-build/common
         run: |
-          PATCH="${GITHUB_WORKSPACE}/.github/tuning/chickernel-tuning.diff"
-
-          if [ ! -f "${PATCH}" ]; then
-            echo "::error::Patch not found: ${PATCH}"
-            exit 1
-          fi
+          PATCH="$(mktemp)"
+          echo "ZGlmZiAtLWdpdCBhL2FyY2gvYXJtNjQvY29uZmlncy9jaGlja2VybmVsX2RlZmNvbmZpZyBiL2FyY2gvYXJtNjQvY29uZmlncy9jaGlja2VybmVsX2RlZmNvbmZpZwppbmRleCBiZWQ4YTRmLi42YjljM2EzIDEwMDY0NAotLS0gYS9hcmNoL2FybTY0L2NvbmZpZ3MvY2hpY2tlcm5lbF9kZWZjb25maWcKKysrIGIvYXJjaC9hcm02NC9jb25maWdzL2NoaWNrZXJuZWxfZGVmY29uZmlnCkBAIC03NDgsMyArNzQ4LDE2IEBAIENPTkZJR19ISVNUX1RSSUdHRVJTPXkKIENPTkZJR19QSURfSU5fQ09OVEVYVElEUj15CiBDT05GSUdfRlVOQ1RJT05fRVJST1JfSU5KRUNUSU9OPXkKICMgQ09ORklHX1JVTlRJTUVfVEVTVElOR19NRU5VIGlzIG5vdCBzZXQKKworIyA+Pj4gY2hpY2tlcm5lbCB0dW5pbmcgPj4+CisjIFJDVSBsYXp5IG9uIGJ5IGRlZmF1bHQ6IGNhbGxiYWNrIGRpdHVuZGEgc2FhdCBDUFUgaWRsZSAoaGVtYXQgZGF5YSkKKyMgQ09ORklHX1JDVV9MQVpZX0RFRkFVTFRfT0ZGIGlzIG5vdCBzZXQKKworIyBDQUtFOiBBUU0gYWx0ZXJuYXRpZiBmcV9jb2RlbC4gV0FKSUIgPXkga2FyZW5hIEFueUtlcm5lbDMgcGFrYWkgZG8ubW9kdWxlcz0wCitDT05GSUdfTkVUX1NDSF9DQUtFPXkKKworIyBOVEZTMzogYmFjYS90dWxpcyBOVEZTIHZpYSBVU0IgT1RHCitDT05GSUdfTlRGUzNfRlM9eQorQ09ORklHX05URlMzX0ZTX1BPU0lYX0FDTD15CitDT05GSUdfTlRGUzNfTFpYX1hQUkVTUz15CisjIDw8PCBjaGlja2VybmVsIHR1bmluZyA8PDwK" | base64 -d > "${PATCH}"
+          echo "=== patch ==="
+          cat "${PATCH}"
+          echo "=== target file ==="
+          ls -la arch/arm64/configs/chickernel_defconfig
 
           if ! git apply --check "${PATCH}"; then
-            echo "::error::Patch does not apply. Upstream defconfig probably changed."
+            echo "::error::Patch does not apply. Upstream defconfig changed."
             exit 1
           fi
 
           git apply "${PATCH}"
-          echo "--- applied ---"
+          echo "=== applied ==="
           grep -nE "RCU_LAZY_DEFAULT_OFF|NET_SCH_CAKE|NTFS3" arch/arm64/configs/chickernel_defconfig
 
       - name: Build, and process the kernel(s)
