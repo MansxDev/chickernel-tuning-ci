@@ -215,8 +215,16 @@ jobs:
             echo "# Tuning: NTFS3 filesystem"; echo "CONFIG_NTFS3_FS=y"; \
             echo "CONFIG_NTFS3_LZX_XPRESS=y"; echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; } \
             >> arch/arm64/configs/chickernel_defconfig
+          # Belt & suspenders: re-append the tuning symbols INSIDE build.sh,
+          # right before it runs `make chickernel_defconfig` (PRE_DEFCONFIG_CMDS).
+          # cwd at eval time is the build root (kernel-build).
+          { echo ""; \
+            echo "PRE_DEFCONFIG_CMDS=\"printf '\\nCONFIG_NET_SCH_CAKE=y\\nCONFIG_NTFS3_FS=y\\nCONFIG_NTFS3_LZX_XPRESS=y\\nCONFIG_NTFS3_FS_POSIX_ACL=y\\n' >> common/arch/arm64/configs/chickernel_defconfig\""; } \
+            >> build.config.gki.aarch64.chickernel
           echo "=== verify chickernel_defconfig ==="
           tail -10 arch/arm64/configs/chickernel_defconfig
+          echo "=== verify build config ==="
+          cat build.config.gki.aarch64.chickernel
 
       - name: Build, and process the kernel(s)
         working-directory: kernel-build
@@ -259,6 +267,19 @@ jobs:
                 fi
             fi
           done
+
+      - name: Diagnose config state (post-build)
+        if: always()
+        working-directory: kernel-build
+        run: |
+          echo "=== defconfig tail (post-build) ==="
+          tail -12 common/arch/arm64/configs/chickernel_defconfig || true
+          echo "=== build config tail (post-build) ==="
+          cat common/build.config.gki.aarch64.chickernel || true
+          echo "=== .config CAKE/NTFS3 ==="
+          grep -E "CONFIG_NET_SCH_CAKE|CONFIG_NTFS3_FS|CONFIG_NTFS3_LZX_XPRESS|CONFIG_NTFS3_FS_POSIX_ACL" out/common/.config || echo "MISSING from .config"
+          echo "=== git diff stat (common) ==="
+          git -C common diff --stat || true
 
       - name: Package Kernels with AnyKernel3
         working-directory: kernel-build
