@@ -204,14 +204,12 @@ jobs:
         run: |
           # Patch chickernel_defconfig (not .config) before build.sh calls make chickernel_defconfig
           echo "=== applying CAKE/NTFS3 patch to chickernel_defconfig ==="
-          cat >> arch/arm64/configs/chickernel_defconfig <<'EOF'
-# Tuning: CAKE AQM
-CONFIG_NET_SCH_CAKE=y
-# Tuning: NTFS3 filesystem
-CONFIG_NTFS3_FS=y
-CONFIG_NTFS3_LZX_XPRESS=y
-CONFIG_NTFS3_FS_POSIX_ACL=y
-EOF
+          echo "# Tuning: CAKE AQM" >> arch/arm64/configs/chickernel_defconfig
+          echo "CONFIG_NET_SCH_CAKE=y" >> arch/arm64/configs/chickernel_defconfig
+          echo "# Tuning: NTFS3 filesystem" >> arch/arm64/configs/chickernel_defconfig
+          echo "CONFIG_NTFS3_FS=y" >> arch/arm64/configs/chickernel_defconfig
+          echo "CONFIG_NTFS3_LZX_XPRESS=y" >> arch/arm64/configs/chickernel_defconfig
+          echo "CONFIG_NTFS3_FS_POSIX_ACL=y" >> arch/arm64/configs/chickernel_defconfig
           echo "=== verify chickernel_defconfig ==="
           tail -10 arch/arm64/configs/chickernel_defconfig
 
