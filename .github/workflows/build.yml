@@ -199,24 +199,25 @@ jobs:
             --fetch-submodules \
             -j$(nproc --all)
 
-      - name: Apply ChicKernel tuning patch
+      - name: Apply ChicKernel tuning (CAKE, NTFS3) to .config
         working-directory: kernel-build/common
         run: |
-          PATCH="$(mktemp)"
-          echo "ZGlmZiAtLWdpdCBhL2FyY2gvYXJtNjQvY29uZmlncy9jaGlja2VybmVsX2RlZmNvbmZpZyBiL2FyY2gvYXJtNjQvY29uZmlncy9jaGlja2VybmVsX2RlZmNvbmZpZwppbmRleCBiZWQ4YTRmYmMuLmM0MzUzZDdjMSAxMDA2NDQKLS0tIGEvYXJjaC9hcm02NC9jb25maWdzL2NoaWNrZXJuZWxfZGVmY29uZmlnCisrKyBiL2FyY2gvYXJtNjQvY29uZmlncy9jaGlja2VybmVsX2RlZmNvbmZpZwpAQCAtMjk2LDYgKzI5Niw3IEBAIENPTkZJR19ORVRfU0NIX1BSSU89eQogQ09ORklHX05FVF9TQ0hfVEJGPXkKIENPTkZJR19ORVRfU0NIX05FVEVNPXkKIENPTkZJR19ORVRfU0NIX0ZRX0NPREVMPXkKK0NPTkZJR19ORVRfU0NIX0NBS0U9eQogQ09ORklHX05FVF9TQ0hfSU5HUkVTUz15CiBDT05GSUdfTkVUX1NDSF9ERUZBVUxUPXkKIENPTkZJR19ERUZBVUxUX0ZRX0NPREVMPXkKQEAgLTYzNCw2ICs2MzUsOSBAQCBDT05GSUdfSU5DUkVNRU5UQUxfRlM9eQogQ09ORklHX01TRE9TX0ZTPXkKIENPTkZJR19WRkFUX0ZTPXkKIENPTkZJR19FWEZBVF9GUz15CitDT05GSUdfTlRGUzNfRlM9eQorQ09ORklHX05URlMzX0xaWF9YUFJFU1M9eQorQ09ORklHX05URlMzX0ZTX1BPU0lYX0FDTD15CiBDT05GSUdfVE1QRlM9eQogIyBDT05GSUdfRUZJVkFSX0ZTIGlzIG5vdCBzZXQKIENPTkZJR19QU1RPUkU9eQo=" | base64 -d > "${PATCH}"
-          echo "=== patch ==="
-          cat "${PATCH}"
-          echo "=== target file ==="
-          ls -la arch/arm64/configs/chickernel_defconfig
+          # Enable required features via scripts/config (robust, version-independent)
+          echo "=== enabling CAKE AQM ==="
+          scripts/config --enable NET_SCH_CAKE
 
-          if ! git apply --check "${PATCH}"; then
-            echo "::error::Patch does not apply. Upstream defconfig changed."
-            exit 1
+          echo "=== enabling NTFS3 filesystem ==="
+          scripts/config --enable NTFS3_FS NTFS3_LZX_XPRESS NTFS3_FS_POSIX_ACL
+
+          echo "=== verify ==="
+          grep -E '^CONFIG_NET_SCH_CAKE=|^CONFIG_NTFS3_' .config
+
+          # Also update chickernel_defconfig for reference (optional)
+          if [ -f arch/arm64/configs/chickernel_defconfig ]; then
+            scripts/config --file arch/arm64/configs/chickernel_defconfig --enable NET_SCH_CAKE NTFS3_FS NTFS3_LZX_XPRESS NTFS3_FS_POSIX_ACL
+            echo "=== chickernel_defconfig updated ==="
+            grep -E 'NET_SCH_CAKE|NTFS3' arch/arm64/configs/chickernel_defconfig
           fi
-
-          git apply "${PATCH}"
-          echo "=== applied ==="
-          grep -nE "RCU_LAZY_DEFAULT_OFF|NET_SCH_CAKE|NTFS3" arch/arm64/configs/chickernel_defconfig
 
       - name: Build, and process the kernel(s)
         working-directory: kernel-build
