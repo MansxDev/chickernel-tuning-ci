@@ -278,6 +278,12 @@ jobs:
           cat common/build.config.gki.aarch64.chickernel || true
           echo "=== .config CAKE/NTFS3 ==="
           grep -E "CONFIG_NET_SCH_CAKE|CONFIG_NTFS3_FS|CONFIG_NTFS3_LZX_XPRESS|CONFIG_NTFS3_FS_POSIX_ACL" out/common/.config || echo "MISSING from .config"
+          echo "=== sch_cake / ntfs3 objects ==="
+          ls -la out/common/net/sched/sch_cake.o out/common/fs/ntfs3/ 2>&1 | head -20 || true
+          echo "=== nm vmlinux for cake/ntfs3 ==="
+          nm out/common/vmlinux 2>/dev/null | grep -iE "cake|ntfs" | head -20 || echo "no symbols (nm failed?)"
+          echo "=== auto.conf CAKE/NTFS3 ==="
+          grep -E "CONFIG_NET_SCH_CAKE|CONFIG_NTFS3_FS" out/common/include/config/auto.conf || echo "MISSING from auto.conf"
           echo "=== git diff stat (common) ==="
           git -C common diff --stat || true
 
