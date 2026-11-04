@@ -207,15 +207,14 @@ jobs:
           # the whole build on mismatch (set -e). Appended symbols land in
           # non-canonical positions, so disable the check for this fork build.
           echo "=== disabling check_defconfig in build config ==="
-          echo "POST_DEFCONFIG_CMDS=" >> build.config.gki.aarch64.chickernel
+          # Files may not end with a newline; force one before appending
+          { echo ""; echo "POST_DEFCONFIG_CMDS="; } >> build.config.gki.aarch64.chickernel
           # Patch chickernel_defconfig (not .config) before build.sh runs make chickernel_defconfig
           echo "=== applying CAKE/NTFS3 patch to chickernel_defconfig ==="
-          echo "# Tuning: CAKE AQM" >> arch/arm64/configs/chickernel_defconfig
-          echo "CONFIG_NET_SCH_CAKE=y" >> arch/arm64/configs/chickernel_defconfig
-          echo "# Tuning: NTFS3 filesystem" >> arch/arm64/configs/chickernel_defconfig
-          echo "CONFIG_NTFS3_FS=y" >> arch/arm64/configs/chickernel_defconfig
-          echo "CONFIG_NTFS3_LZX_XPRESS=y" >> arch/arm64/configs/chickernel_defconfig
-          echo "CONFIG_NTFS3_FS_POSIX_ACL=y" >> arch/arm64/configs/chickernel_defconfig
+          { echo ""; echo "# Tuning: CAKE AQM"; echo "CONFIG_NET_SCH_CAKE=y"; \
+            echo "# Tuning: NTFS3 filesystem"; echo "CONFIG_NTFS3_FS=y"; \
+            echo "CONFIG_NTFS3_LZX_XPRESS=y"; echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; } \
+            >> arch/arm64/configs/chickernel_defconfig
           echo "=== verify chickernel_defconfig ==="
           tail -10 arch/arm64/configs/chickernel_defconfig
 
