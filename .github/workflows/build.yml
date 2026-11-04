@@ -199,7 +199,7 @@ jobs:
             --fetch-submodules \
             -j$(nproc --all)
 
-      - name: Patch chickernel_defconfig (CAKE, NTFS3)
+      - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
         run: |
           # NOTE: build.sh runs POST_DEFCONFIG_CMDS="check_defconfig" which
@@ -209,26 +209,32 @@ jobs:
           echo "=== disabling check_defconfig in build config ==="
           # Files may not end with a newline; force one before appending
           { echo ""; echo "POST_DEFCONFIG_CMDS="; } >> build.config.gki.aarch64.chickernel
+          # MANSX KERNEL APEX identity: uname -r
+          echo "=== updating kernel identity to MANSX KERNEL APEX ==="
+          sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-MANSX-APEX-V1.0.0"/' arch/arm64/configs/chickernel_defconfig
           # Patch chickernel_defconfig (not .config) before build.sh runs make chickernel_defconfig
-          echo "=== applying CAKE/NTFS3 patch to chickernel_defconfig ==="
-          { echo ""; echo "# Tuning: CAKE AQM"; echo "CONFIG_NET_SCH_CAKE=y"; \
-            echo "# Tuning: NTFS3 filesystem"; echo "CONFIG_NTFS3_FS=y"; \
-            echo "CONFIG_NTFS3_LZX_XPRESS=y"; echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; \
-            echo "# Tuning: RCU Lazy default ON (save battery)"; \
+          echo "=== applying MANSX KERNEL APEX tuning patch ==="
+          { echo ""; echo "# Tuning: MANSX KERNEL APEX"; \
+            echo "CONFIG_NET_SCH_CAKE=y"; \
+            echo "CONFIG_NTFS3_FS=y"; \
+            echo "CONFIG_NTFS3_LZX_XPRESS=y"; \
+            echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; \
+            echo "CONFIG_RCU_LAZY=y"; \
             echo "CONFIG_RCU_LAZY_DEFAULT_OFF=n"; \
-            echo "# Tuning: TCP BBR default congestion control"; \
-            echo "CONFIG_TCP_CONG_BBR=y"; echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\""; \
-            echo "# Tuning: MGLRU enable by default"; \
-            echo "CONFIG_LRU_GEN=y"; echo "CONFIG_LRU_GEN_ENABLED=y"; } \
+            echo "CONFIG_TCP_CONG_BBR=y"; \
+            echo "CONFIG_DEFAULT_BBR=y"; \
+            echo "CONFIG_LRU_GEN=y"; \
+            echo "CONFIG_LRU_GEN_ENABLED=y"; } \
             >> arch/arm64/configs/chickernel_defconfig
           # Belt & suspenders: re-append the tuning symbols INSIDE build.sh,
           # right before it runs `make chickernel_defconfig` (PRE_DEFCONFIG_CMDS).
           # cwd at eval time is the build root (kernel-build).
           { echo ""; \
-            echo "PRE_DEFCONFIG_CMDS=\"printf '\\nCONFIG_NET_SCH_CAKE=y\\nCONFIG_NTFS3_FS=y\\nCONFIG_NTFS3_LZX_XPRESS=y\\nCONFIG_NTFS3_FS_POSIX_ACL=y\\nCONFIG_RCU_LAZY_DEFAULT_OFF=n\\nCONFIG_TCP_CONG_BBR=y\\nCONFIG_DEFAULT_TCP_CONG=\\\"bbr\\\"\\nCONFIG_LRU_GEN=y\\nCONFIG_LRU_GEN_ENABLED=y\\n' >> common/arch/arm64/configs/chickernel_defconfig\""; } \
+            echo "PRE_DEFCONFIG_CMDS=\"printf '\\nCONFIG_NET_SCH_CAKE=y\\nCONFIG_NTFS3_FS=y\\nCONFIG_NTFS3_LZX_XPRESS=y\\nCONFIG_NTFS3_FS_POSIX_ACL=y\\nCONFIG_RCU_LAZY_DEFAULT_OFF=n\\nCONFIG_TCP_CONG_BBR=y\\nCONFIG_DEFAULT_BBR=y\\nCONFIG_LRU_GEN=y\\nCONFIG_LRU_GEN_ENABLED=y\\n' >> common/arch/arm64/configs/chickernel_defconfig && sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION=\\\"-MANSX-APEX-V1.0.0\\\"/' common/arch/arm64/configs/chickernel_defconfig\""; } \
             >> build.config.gki.aarch64.chickernel
           echo "=== verify chickernel_defconfig ==="
-          tail -10 arch/arm64/configs/chickernel_defconfig
+          tail -14 arch/arm64/configs/chickernel_defconfig
+          grep -n "CONFIG_LOCALVERSION" arch/arm64/configs/chickernel_defconfig | head -3
           echo "=== verify build config ==="
           cat build.config.gki.aarch64.chickernel
 
@@ -274,7 +280,7 @@ jobs:
             fi
           done
 
-      - name: Verify CAKE/NTFS3/RCU-Lazy/BBR/MGLRU built into kernel
+      - name: Verify MANSX KERNEL APEX tuning built into kernel
         working-directory: kernel-build
         run: |
           # Guardrail: fail the build if the tuning symbols did not make it
@@ -285,12 +291,14 @@ jobs:
           grep -E "CONFIG_LRU_GEN_ENABLED=y" out/common/.config
           ! grep -E "CONFIG_RCU_LAZY_DEFAULT_OFF=y" out/common/.config
           grep -E "CONFIG_TCP_CONG_BBR=y" out/common/.config
+          grep -E "CONFIG_DEFAULT_BBR=y" out/common/.config
           grep -E "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" out/common/.config
+          grep -E "CONFIG_LOCALVERSION=\"-MANSX-APEX-V1.0.0\"" out/common/.config
           grep -E "CONFIG_NET_SCH_CAKE=y" out/common/include/config/auto.conf
           grep -E "CONFIG_NTFS3_FS=y" out/common/include/config/auto.conf
           test -f out/common/net/sched/sch_cake.o
           test -d out/common/fs/ntfs3
-          echo "TUNING OK: CAKE/NTFS3/BBR/MGLRU/RCU-lazy config verified"
+          echo "TUNING OK: CAKE/NTFS3/BBR/MGLRU/RCU-lazy/APEX-identity verified"
 
       - name: Package Kernels with AnyKernel3
         working-directory: kernel-build
@@ -301,7 +309,38 @@ jobs:
               cd "${AK3_DIR}-${config}"
               
               cp "${FINAL_DIR}/${IMAGE_TYPE}-${config}" "${AK3_DIR}-${config}/${IMAGE_TYPE}"
-              zip -r9 "${FINAL_DIR}/${config}.zip" * -x .git README.md *placeholder
+              
+              # MANSX KERNEL APEX banner
+              cat > banner <<'BANNER'
+               __  __    _    _   _ ____  __  __  _  _____ _   _ 
+              |  \/  |  / \  | \ | / ___||  \/  |/ \| ____| \ | |
+              | |\/| | / _ \ |  \| \___ \| |\/| / _ \  _| |  \| |
+              | |  | |/ ___ \| |\  |___) | |  |/ ___ \ |___| |\  |
+              |_|  |_/_/   \_\_| \_|____/|_|  /_/   \_\_____|_| \_|
+               _____  _____   _____ _______ _     _ _______ 
+              |_ _\ \/ /_ _| | ____|_   _| |   | | |_   _|
+               | | \  / | |  |  _|   | | | |   | |   | |  
+               | | /  \ | |  | |___  | | | |___| |___| |  
+              |___/_/\_\___| |_____| |_| |_____|_____|_|  
+               ____________ _____  ___________ _   _ 
+              /_  __/ ___// ____\ \ / / ____\ \ | | |
+               | |  \___ \| |__  \ V /|  _|  \ \| | |
+               | |  /___) |___ \ | | | |___  >  > > |
+               |_|  |____/_____/ |_| |_____/_/_/|_|
+
+                PERFORMANCE • GAMING • EFFICIENCY
+                ---------------------------------
+                Developer : MansXDev
+                Version   : 1.0.0
+                Codename  : APEX
+                Base      : Linux 5.15
+                Platform  : Snapdragon 685
+                Device    : Redmi Note 13 4G NFC
+                Build     : Custom
+              BANNER
+              # AnyKernel3 script identity
+              sed -i 's|^kernel.string=.*|kernel.string=MANSX KERNEL APEX v1.0.0 by MansXDev|' anykernel.sh
+              zip -r9 "${FINAL_DIR}/MANSX-KERNEL-APEX-V1.0.0-sapphiren.zip" * -x .git README.md *placeholder
               
               cd ..
             fi
