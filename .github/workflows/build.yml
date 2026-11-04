@@ -213,13 +213,19 @@ jobs:
           echo "=== applying CAKE/NTFS3 patch to chickernel_defconfig ==="
           { echo ""; echo "# Tuning: CAKE AQM"; echo "CONFIG_NET_SCH_CAKE=y"; \
             echo "# Tuning: NTFS3 filesystem"; echo "CONFIG_NTFS3_FS=y"; \
-            echo "CONFIG_NTFS3_LZX_XPRESS=y"; echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; } \
+            echo "CONFIG_NTFS3_LZX_XPRESS=y"; echo "CONFIG_NTFS3_FS_POSIX_ACL=y"; \
+            echo "# Tuning: RCU Lazy default ON (save battery)"; \
+            echo "CONFIG_RCU_LAZY_DEFAULT_OFF=n"; \
+            echo "# Tuning: TCP BBR default congestion control"; \
+            echo "CONFIG_TCP_CONG_BBR=y"; echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\""; \
+            echo "# Tuning: MGLRU enable by default"; \
+            echo "CONFIG_LRU_GEN=y"; echo "CONFIG_LRU_GEN_ENABLED=y"; } \
             >> arch/arm64/configs/chickernel_defconfig
           # Belt & suspenders: re-append the tuning symbols INSIDE build.sh,
           # right before it runs `make chickernel_defconfig` (PRE_DEFCONFIG_CMDS).
           # cwd at eval time is the build root (kernel-build).
           { echo ""; \
-            echo "PRE_DEFCONFIG_CMDS=\"printf '\\nCONFIG_NET_SCH_CAKE=y\\nCONFIG_NTFS3_FS=y\\nCONFIG_NTFS3_LZX_XPRESS=y\\nCONFIG_NTFS3_FS_POSIX_ACL=y\\n' >> common/arch/arm64/configs/chickernel_defconfig\""; } \
+            echo "PRE_DEFCONFIG_CMDS=\"printf '\\nCONFIG_NET_SCH_CAKE=y\\nCONFIG_NTFS3_FS=y\\nCONFIG_NTFS3_LZX_XPRESS=y\\nCONFIG_NTFS3_FS_POSIX_ACL=y\\nCONFIG_RCU_LAZY_DEFAULT_OFF=n\\nCONFIG_TCP_CONG_BBR=y\\nCONFIG_DEFAULT_TCP_CONG=\\\"bbr\\\"\\nCONFIG_LRU_GEN=y\\nCONFIG_LRU_GEN_ENABLED=y\\n' >> common/arch/arm64/configs/chickernel_defconfig\""; } \
             >> build.config.gki.aarch64.chickernel
           echo "=== verify chickernel_defconfig ==="
           tail -10 arch/arm64/configs/chickernel_defconfig
@@ -268,18 +274,23 @@ jobs:
             fi
           done
 
-      - name: Verify CAKE/NTFS3 built into kernel
+      - name: Verify CAKE/NTFS3/RCU-Lazy/BBR/MGLRU built into kernel
         working-directory: kernel-build
         run: |
           # Guardrail: fail the build if the tuning symbols did not make it
           # into .config / auto.conf / objects (regression protection).
           grep -E "CONFIG_NET_SCH_CAKE=y" out/common/.config
           grep -E "CONFIG_NTFS3_FS=y" out/common/.config
+          grep -E "CONFIG_LRU_GEN=y" out/common/.config
+          grep -E "CONFIG_LRU_GEN_ENABLED=y" out/common/.config
+          ! grep -E "CONFIG_RCU_LAZY_DEFAULT_OFF=y" out/common/.config
+          grep -E "CONFIG_TCP_CONG_BBR=y" out/common/.config
+          grep -E "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" out/common/.config
           grep -E "CONFIG_NET_SCH_CAKE=y" out/common/include/config/auto.conf
           grep -E "CONFIG_NTFS3_FS=y" out/common/include/config/auto.conf
           test -f out/common/net/sched/sch_cake.o
           test -d out/common/fs/ntfs3
-          echo "CAKE/NTFS3 OK: objects and config verified"
+          echo "TUNING OK: CAKE/NTFS3/BBR/MGLRU/RCU-lazy config verified"
 
       - name: Package Kernels with AnyKernel3
         working-directory: kernel-build
