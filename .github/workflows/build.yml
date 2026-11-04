@@ -262,6 +262,19 @@ jobs:
           done
 
       - name: Package Kernels with AnyKernel3
+        working-directory: kernel-build
+        run: |
+          for config in ${BUILD_CONFIGS}; do
+            if [ -f "${FINAL_DIR}/${IMAGE_TYPE}-${config}" ]; then
+              cp -r "${AK3_DIR}" "${AK3_DIR}-${config}"
+              cd "${AK3_DIR}-${config}"
+              
+              cp "${FINAL_DIR}/${IMAGE_TYPE}-${config}" "${AK3_DIR}-${config}/${IMAGE_TYPE}"
+              zip -r9 "${FINAL_DIR}/${config}.zip" * -x .git README.md *placeholder
+              
+              cd ..
+            fi
+          done
 
       - name: Upload Kernel Packages
         uses: actions/upload-artifact@v4
