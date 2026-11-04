@@ -1,0 +1,7 @@
+# Tuning: CAKE AQM (inserted after CONFIG_NET_SCH_PRIO)
+CONFIG_NET_SCH_CAKE=y
+
+# Tuning: NTFS3 filesystem (inserted after CONFIG_EXFAT_FS)
+CONFIG_NTFS3_FS=y
+CONFIG_NTFS3_LZX_XPRESS=y
+CONFIG_NTFS3_FS_POSIX_ACL=y
