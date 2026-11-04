@@ -199,25 +199,23 @@ jobs:
             --fetch-submodules \
             -j$(nproc --all)
 
-      - name: Apply ChicKernel tuning (CAKE, NTFS3) to .config
+      - name: Patch chickernel_defconfig (CAKE, NTFS3)
         working-directory: kernel-build/common
         run: |
-          # Enable required features via scripts/config (robust, version-independent)
-          echo "=== enabling CAKE AQM ==="
-          scripts/config --enable NET_SCH_CAKE
+          # Patch chickernel_defconfig (not .config) before build.sh calls make chickernel_defconfig
+          echo "=== applying CAKE/NTFS3 patch to chickernel_defconfig ==="
+          cat >> arch/arm64/configs/chickernel_defconfig <<'EOF'
 
-          echo "=== enabling NTFS3 filesystem ==="
-          scripts/config --enable NTFS3_FS NTFS3_LZX_XPRESS NTFS3_FS_POSIX_ACL
+# Tuning: CAKE AQM
+CONFIG_NET_SCH_CAKE=y
+# Tuning: NTFS3 filesystem
+CONFIG_NTFS3_FS=y
+CONFIG_NTFS3_LZX_XPRESS=y
+CONFIG_NTFS3_FS_POSIX_ACL=y
+EOF
 
-          echo "=== verify ==="
-          grep -E '^CONFIG_NET_SCH_CAKE=|^CONFIG_NTFS3_' .config
-
-          # Also update chickernel_defconfig for reference (optional)
-          if [ -f arch/arm64/configs/chickernel_defconfig ]; then
-            scripts/config --file arch/arm64/configs/chickernel_defconfig --enable NET_SCH_CAKE NTFS3_FS NTFS3_LZX_XPRESS NTFS3_FS_POSIX_ACL
-            echo "=== chickernel_defconfig updated ==="
-            grep -E 'NET_SCH_CAKE|NTFS3' arch/arm64/configs/chickernel_defconfig
-          fi
+          echo "=== verify chickernel_defconfig ==="
+          tail -10 arch/arm64/configs/chickernel_defconfig
 
       - name: Build, and process the kernel(s)
         working-directory: kernel-build
