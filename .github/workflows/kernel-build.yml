@@ -210,6 +210,13 @@ jobs:
           grep -n "kernelsu" drivers/Makefile 2>/dev/null || echo "WARNING: kernelsu not in Makefile"
           grep -n "kernelsu" drivers/Kconfig 2>/dev/null || echo "WARNING: kernelsu not in Kconfig"
 
+      - name: Fix KSU Kconfig dependencies
+        working-directory: kernel-build/common
+        run: |
+          echo "=== Removing KSU Kconfig dependencies ==="
+          sed -i '/depends on KPROBES && EXT4_FS/d' drivers/kernelsu/Kconfig
+          grep -n "depends on" drivers/kernelsu/Kconfig
+
       - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
         run: |
@@ -221,7 +228,7 @@ jobs:
             echo "CONFIG_KPROBES=y"; \
             echo "CONFIG_EXT4_FS=y"; }             >> arch/arm64/configs/chickernel_defconfig
 
-          { echo "";             echo "PRE_DEFCONFIG_CMDS="printf '\nCONFIG_NET_SCH_CAKE=y\nCONFIG_NTFS3_FS=y\nCONFIG_NTFS3_LZX_XPRESS=y\nCONFIG_NTFS3_FS_POSIX_ACL=y\nCONFIG_RCU_LAZY_DEFAULT_OFF=n\nCONFIG_TCP_CONG_BBR=y\nCONFIG_DEFAULT_BBR=y\nCONFIG_LRU_GEN=y\nCONFIG_LRU_GEN_ENABLED=y\nCONFIG_MANSX_FLOORS=y\nCONFIG_KSU=y\nCONFIG_KPROBES=y\nCONFIG_EXT4_FS=y\n' >> arch/arm64/configs/chickernel_defconfig && sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION=\"-MANSX-APEX-V1.0.2-KSU\"/' arch/arm64/configs/chickernel_defconfig""; }             >> build.config.gki.aarch64.chickernel
+          sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-MANSX-APEX-V1.0.2-KSU"/' arch/arm64/configs/chickernel_defconfig
       - name: Disable BTF generation (debug info)
         working-directory: kernel-build/common
         run: |
