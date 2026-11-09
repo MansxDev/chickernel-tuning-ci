@@ -202,7 +202,7 @@ jobs:
       - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
         run: |
-          # NOTE: build.sh runs POST_DEFCONFIG_CMDS="check_defconfig" which
+          # NOTE: build.sh runs POST_DEFCONFIG_CMDS="echo CONFIG_KSU=y >> ${OUT_DIR}/.config && echo CONFIG_MANSX_FLOORS=y >> ${OUT_DIR}/.config""check_defconfig" which
           # diffs the source defconfig against savedefconfig output and fails
           # the whole build on mismatch (set -e). Appended symbols land in
           # non-canonical positions, so disable the check for this fork build.
