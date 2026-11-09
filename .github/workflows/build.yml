@@ -204,6 +204,15 @@ jobs:
         run: |
           echo "=== setting up KernelSU official ==="
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+          # move kernelsu to drivers/kernelsu for building
+          if [ -d "kernelsu" ]; then mv kernelsu drivers/kernelsu; fi
+          # register in build system
+          if ! grep -q "kernelsu" drivers/Makefile; then
+            echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
+          fi
+          if ! grep -q "kernelsu/Kconfig" drivers/Kconfig; then
+            echo "source \"drivers/kernelsu/Kconfig\"" >> drivers/Kconfig
+          fi
 
       - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
