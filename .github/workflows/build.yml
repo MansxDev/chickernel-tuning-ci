@@ -214,7 +214,7 @@ jobs:
             echo "source \"drivers/kernelsu/Kconfig\"" >> drivers/Kconfig
           fi
 
-      - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
+      - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)      - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
         run: |
           { echo ""; echo "POST_DEFCONFIG_CMDS="; } >> build.config.gki.aarch64.chickernel
@@ -224,7 +224,18 @@ jobs:
           { echo ""; echo "# Tuning: MANSX KERNEL APEX";             echo "CONFIG_NET_SCH_CAKE=y";             echo "CONFIG_NTFS3_FS=y";             echo "CONFIG_NTFS3_LZX_XPRESS=y";             echo "CONFIG_NTFS3_FS_POSIX_ACL=y";             echo "CONFIG_RCU_LAZY=y";             echo "CONFIG_RCU_LAZY_DEFAULT_OFF=n";             echo "CONFIG_TCP_CONG_BBR=y";             echo "CONFIG_DEFAULT_BBR=y";             echo "CONFIG_LRU_GEN=y";             echo "CONFIG_LRU_GEN_ENABLED=y";             echo "CONFIG_MANSX_FLOORS=y";             echo "CONFIG_KSU=y"; }             >> arch/arm64/configs/chickernel_defconfig
 
           { echo "";             echo "PRE_DEFCONFIG_CMDS="printf '\nCONFIG_NET_SCH_CAKE=y\nCONFIG_NTFS3_FS=y\nCONFIG_NTFS3_LZX_XPRESS=y\nCONFIG_NTFS3_FS_POSIX_ACL=y\nCONFIG_RCU_LAZY_DEFAULT_OFF=n\nCONFIG_TCP_CONG_BBR=y\nCONFIG_DEFAULT_BBR=y\nCONFIG_LRU_GEN=y\nCONFIG_LRU_GEN_ENABLED=y\nCONFIG_MANSX_FLOORS=y\nCONFIG_KSU=y\n' >> arch/arm64/configs/chickernel_defconfig && sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION=\"-MANSX-APEX-V1.0.2-KSU\"/' arch/arm64/configs/chickernel_defconfig""; }             >> build.config.gki.aarch64.chickernel
+      - name: Disable BTF generation (debug info)
+        working-directory: kernel-build/common
+        run: |
+          echo "CONFIG_DEBUG_INFO_BTF=n" >> arch/arm64/configs/chickernel_defconfig
+
       - name: Apply MANSX floors patch (Profil B steady - min floor + thermal cap floor)
+
+      - name: Disable BTF generation
+        working-directory: kernel-build/common
+        run: |
+          echo "=== disable BTF (debug info) ==="
+          echo "CONFIG_DEBUG_INFO_BTF=n" >> arch/arm64/configs/chickernel_defconfig
         working-directory: kernel-build/common
         run: |
           echo "=== applying MANSX floors kernel patch ==="
@@ -238,6 +249,11 @@ jobs:
           tail -5 arch/arm64/configs/chickernel_defconfig
           echo "MANSX floors patch applied OK"
 
+      - name: Disable BTF generation
+        working-directory: kernel-build/common
+        run: |
+          echo "=== disable BTF (debug info) ==="
+          echo "CONFIG_DEBUG_INFO_BTF=n" >> arch/arm64/configs/chickernel_defconfig
       - name: Build, and process the kernel(s)
         working-directory: kernel-build
         env:
