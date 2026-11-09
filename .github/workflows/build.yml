@@ -245,6 +245,8 @@ jobs:
         run: |
           echo "=== setting up KernelSU official ==="
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+          echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
+          echo 'source "drivers/kernelsu/Kconfig"' >> drivers/Kconfig
 
       - name: Apply MANSX floors patch (Profil B steady - min floor + thermal cap floor)
         working-directory: kernel-build/common
