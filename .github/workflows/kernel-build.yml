@@ -202,20 +202,27 @@ jobs:
       - name: Setup KernelSU Official
         working-directory: kernel-build/common
         run: |
-          echo "=== setting up KernelSU official ==="
-          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-          # Verify KSU was set up correctly
-          echo "=== KSU setup verification ==="
-          ls -la drivers/kernelsu/ 2>/dev/null || echo "WARNING: drivers/kernelsu not found"
-          grep -n "kernelsu" drivers/Makefile 2>/dev/null || echo "WARNING: kernelsu not in Makefile"
-          grep -n "kernelsu" drivers/Kconfig 2>/dev/null || echo "WARNING: kernelsu not in Kconfig"
-
-      - name: Fix KSU Kconfig dependencies
-        working-directory: kernel-build/common
-        run: |
-          echo "=== Removing KSU Kconfig dependencies ==="
+          echo "=== setting up KernelSU official (manual) ==="
+          # Clone KernelSU
+          git clone https://github.com/tiann/KernelSU
+          cd KernelSU
+          git checkout "$(git describe --abbrev=0 --tags)"
+          cd ..
+          # Copy (not symlink) KSU kernel to drivers/kernelsu
+          rm -rf drivers/kernelsu
+          cp -r KernelSU/kernel drivers/kernelsu
+          # Add Makefile entry
+          grep -q "kernelsu" drivers/Makefile || printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> drivers/Makefile
+          # Add Kconfig entry (before endmenu)
+          grep -q 'source "drivers/kernelsu/Kconfig"' drivers/Kconfig || sed -i '/endmenu/i\source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          # Remove KSU Kconfig dependencies
           sed -i '/depends on KPROBES && EXT4_FS/d' drivers/kernelsu/Kconfig
-          grep -n "depends on" drivers/kernelsu/Kconfig
+          # Verify
+          echo "=== KSU setup verification ==="
+          ls drivers/kernelsu/ | head -5
+          grep -n "kernelsu" drivers/Makefile
+          grep -n "kernelsu" drivers/Kconfig
+
 
       - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
