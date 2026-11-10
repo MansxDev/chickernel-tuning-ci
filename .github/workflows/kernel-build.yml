@@ -230,7 +230,8 @@ jobs:
           echo "=== Fixing uapi/app_profile.h include ==="
           # The file uapi/app_profile.h doesn't exist; change include to policy/app_profile.h
           sed -i 's|#include "uapi/app_profile.h"|#include "policy/app_profile.h"|' drivers/kernelsu/policy/allowlist.h
-          grep -n "app_profile.h" drivers/kernelsu/policy/allowlist.h
+          sed -i 's|#include "uapi/app_profile.h"|#include "policy/app_profile.h"|' drivers/kernelsu/policy/app_profile.h
+          grep -rn "app_profile.h" drivers/kernelsu/policy/*.h
 
       - name: Patch chickernel_defconfig (MANSX KERNEL APEX identity + tuning)
         working-directory: kernel-build/common
